@@ -1,6 +1,8 @@
 import streamlit as st
 from data_processing import load_data, get_districts_for_state
 from prediction import predict_yield, load_model
+from maps import create_india_map
+from state_coords import state_coords
 
 # Define SessionState class to persist tab selection across pages
 class SessionState:
@@ -15,7 +17,7 @@ def main():
     st.title('Crop Yields Prediction')
     st.write('Welcome to the Crop Yields Prediction app!')
 
-    data = load_data('../main_data.csv')
+    data = load_data('CompleteDataset.csv')
     states_list = list(sorted(data['State'].unique()))
 
     # Create tabs
@@ -58,9 +60,26 @@ def main():
         st.sidebar.header("Distribution Options")
         st.sidebar.write("Customize your distribution map here.")
 
-        # You can include your distribution map visualization code here
-        st.write("Distribution Across India Tab Selected")
-        # Add your distribution map visualization code here
+        # india_map = create_india_map(data)
+
+        # Convert Folium map to HTML
+        # folium_html = india_map._repr_html_()
+
+        # Display Folium map in Streamlit
+        # st.components.v1.html(folium_html, width=700, height=500)
+        crop_options = ['Maize', 'Rice', 'Green Gram', 'Urad', 'Sesamum', 'Groundnut', 'Onion', 'Pigeon Pea', 'Potato',
+                        'Gram', 'Wheat', 'Rapeseed & Mustard', 'Jowar', 'Sugarcane', 'Bajra']
+        crop = st.selectbox('Select Crop:', crop_options)
+
+        year_options = [2018, 2019, 2020, 2021]
+        year = st.selectbox('Select Year:', year_options)
+
+        # Display the map based on user input
+        if st.button('Show Map'):
+            st.write(f"Showing crop yield information for {crop} in {year}")
+            map_html = create_india_map(data, crop, year)._repr_html_()
+            st.components.v1.html(map_html, width=700, height=500)
+
 
 if __name__ == "__main__":
     main()
