@@ -1,18 +1,26 @@
 custom_css = """
 <style>
     /* Add your custom CSS styles here */
-    body {
-        background: #81689D;
+    .leaflet-container {
+        width: 100% !important;
+        height: 100% !important;
     }
-    
-    .st-emotion-cache-13k62yr {
-    position: absolute;
-    background: #265073;
-    inset: 0px;
-    color-scheme: dark;
-    overflow: hidden;
-}
     
 </style>
 """
 
+# body
+# {
+#     background:  # 81689D;
+# }
+#
+# .st - emotion - cache - 13
+# k62yr
+# {
+#     position: absolute;
+# background:  # 265073;
+# inset: 0
+# px;
+# color - scheme: dark;
+# overflow: hidden;
+# }

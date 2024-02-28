@@ -2,6 +2,8 @@ import streamlit as st
 from data_processing import load_data, get_districts_for_state
 from prediction import predict_yield, load_model
 from maps import create_india_map
+from styling import custom_css
+import os
 from state_coords import state_coords
 
 # Define SessionState class to persist tab selection across pages
@@ -13,11 +15,14 @@ def main():
     # Create a SessionState object
     session_state = SessionState()
 
+    st.markdown(custom_css, unsafe_allow_html=True)
     # Set page title and introduction
     st.title('Crop Yields Prediction')
     st.write('Welcome to the Crop Yields Prediction app!')
 
-    data = load_data('CompleteDataset.csv')
+    package_dir = os.path.dirname(os.path.abspath(__file__))
+    file_path = os.path.join(package_dir, 'CompleteDataset.csv')
+    data = load_data(file_path)
     states_list = list(sorted(data['State'].unique()))
 
     # Create tabs
@@ -71,14 +76,15 @@ def main():
                         'Gram', 'Wheat', 'Rapeseed & Mustard', 'Jowar', 'Sugarcane', 'Bajra']
         crop = st.selectbox('Select Crop:', crop_options)
 
-        year_options = [2018, 2019, 2020, 2021]
-        year = st.selectbox('Select Year:', year_options)
+        # year_options = [2018, 2019, 2020, 2021]
+        year = st.number_input('Enter Year', min_value=2018, max_value=2021, step=1, value=2020)
 
         # Display the map based on user input
         if st.button('Show Map'):
             st.write(f"Showing crop yield information for {crop} in {year}")
             map_html = create_india_map(data, crop, year)._repr_html_()
-            st.components.v1.html(map_html, width=700, height=500)
+            with st.container():
+                st.components.v1.html(map_html, width=None, height=500)
 
 
 if __name__ == "__main__":
