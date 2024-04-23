@@ -1,10 +1,13 @@
 import streamlit as st
+import os
 import pickle
+from data_processing import load_data
+from crop_dictionary import crop_dict
 
-def load_model(file_path="D:\\Ishaan\\Capstone_project\\2020-2022\\capstone_deployment\\model.pkl"):
-    with open(file_path, 'rb') as f:
-        model = pickle.load(f)
-    return model
+
+@st.cache_data
+def memoized_load_data(file_path):
+    return load_data(file_path)
 
 
 def impute_season_values(selected_season):
@@ -15,32 +18,41 @@ def impute_season_values(selected_season):
     return imputed_values
 
 
-def get_temperature_and_humidity_data(data, state, year):
-    # Load the data
-
-    # Filter the DataFrame based on the state and year provided by the user
-    filtered_data = data[(data['State'] == state) & (data['YEAR'] == year)]
-
-    # Retrieve temperature data for all months
-    temperature_data = filtered_data[['jan_t', 'feb_t', 'mar_t', 'apr_t', 'may_t', 'jun_t',
-                                      'jul_t', 'aug_t', 'sep_t', 'oct_t', 'nov_t', 'dec_t']].iloc[0].tolist()
-
-    # Retrieve humidity data for all months
-    humidity_data = filtered_data[['jan_h', 'feb_h', 'mar_h', 'apr_h', 'may_h', 'jun_h',
-                                   'jul_h', 'aug_h', 'sep_h', 'oct_h', 'nov_h', 'dec_h']].iloc[0].tolist()
-
-    return temperature_data, humidity_data
+def get_predictors(feature_forecasts, state):
+    columns = feature_forecasts[feature_forecasts['State'] == state].columns[1:]
+    values = feature_forecasts[feature_forecasts['State'] == state].values[0][1:]
+    predictors = dict(zip(columns, values))
+    return predictors
 
 
-def predict_yield(model,data, state, district, year, selected_season, area, production):
-    # Get temperature and humidity data for the specified state and year
-    temperature_data, humidity_data = get_temperature_and_humidity_data(data, state, year)
+def get_crop(crop):
+    return crop_dict[crop]
+
+
+def predict_yield(model, data, state, district, crop, year, selected_season, area):
+    package_dir = os.path.dirname(os.path.abspath(__file__))
+    file_path = os.path.join(package_dir, 'Feature_forecast.csv')
+
+    # Use the memoized functions to load data and model
+    feature_data = memoized_load_data(file_path)
+    # Getting predictors using ARIMA Modelling
+    predictors = get_predictors(feature_data, state)
 
     # Impute the season values
     imputed_season_values = impute_season_values(selected_season)
 
+    # Encoded Crop Value
+    encoded_crop = get_crop(crop)
     # Construct the feature vector including temperature and humidity data
-    X = [[year] + imputed_season_values + [area, production] + temperature_data + humidity_data]
+    X = [[encoded_crop]+ [year] +
+         [predictors['Humidity']] + [predictors['Rainfall']] + [predictors['Temperature']] + [predictors[
+             'Surface_Soil_Wetness']] +
+          [predictors['Profile_Soil_Moisture']] + [predictors['Root_Zone_Soil_Wetness']] + [area] +
+         [predictors['Yield_lag1']] + [predictors['Humidity_lag1']] + [predictors['Temperature_lag1']] + [predictors[
+             'Rainfall_lag1']] +
+          [predictors['Surface_Soil_Wetness_lag1']] +
+          [predictors['Profile_Soil_Moisture_lag1']] + [predictors['Root_Zone_Soil_Wetness_lag1']] +
+         imputed_season_values]
 
     # Make prediction using the loaded model
     predicted_yield = model.predict(X)

@@ -9,7 +9,7 @@ from state_coords import state_coords, state_code_mapping
 
 def create_india_map(data, crop, year):
     # Filter the dataset based on user input for crop and year
-    filtered_data = data[(data['Crop'] == crop) & (data['YEAR'] == year)]
+    filtered_data = data[(data['Crop'] == crop) & (data['Year'] == year)]
 
     if filtered_data.empty:
         return folium.Map(location=[20.5937, 78.9629], zoom_start=5)  # Return an empty map if no data found
@@ -23,7 +23,7 @@ def create_india_map(data, crop, year):
     state_names = []
 
     for state_code in filtered_data['state_code'].unique():
-        total_yield = np.sum(filtered_data[filtered_data['state_code'] == state_code]['Yield (Tonne/Hectare)'])
+        total_yield = np.sum(filtered_data[filtered_data['state_code'] == state_code]['Yield'])
         state_codes.append(state_code)
         state_yield.append(total_yield)
         state_names.append(filtered_data[filtered_data['state_code'] == state_code]['State'].iloc[0])
@@ -42,11 +42,12 @@ def create_india_map(data, crop, year):
         up_geojson = json.load(file)
 
     # Create a folium map
-    map_india = folium.Map(location=[20.5937, 78.9629], zoom_start=5)
+    map_india = folium.Map(location=[20.5937, 78.9629], zoom_start=4)
 
     # Add markers for each state
     for state, lat, lon in state_coords:
-        folium.Marker(location=[lat, lon], popup=f"State: {state}").add_to(map_india)
+        value = new_data[new_data['state'] == state]['yield']
+        folium.Marker(location=[lat, lon], popup=f"{state}: {value}").add_to(map_india)
 
     # Create a choropleth layer
     choropleth = folium.Choropleth(
